@@ -1,0 +1,30 @@
+
+.red-box {
+    background-color: red;
+    display: flex; /* Habilitar Flexbox */
+    justify-content: center; /* Centrar horizontalmente */
+    align-items: center; /* Centrar verticalmente */
+    height: 100px; /* Definir una altura para las cajas rojas */
+}
+
+.img-fluid {
+    max-width: 100%;
+    height: auto;
+}
+.border {
+    border: 1px solid #dee2e6 !important;
+}
+
+.border {
+    border: 1px solid #dee2e6 !important;
+}
+.car-image {
+    width: 50px; /* Ancho de la imagen */
+    height: auto; /* Altura automática para mantener la proporción */
+}
+.color-box {
+    height: 100px; /* Definir una altura para las cajas */
+    display: flex;
+    justify-content: center; /* Centrar horizontalmente el contenido */
+    align-items: center; /* Centrar verticalmente el contenido */
+}
