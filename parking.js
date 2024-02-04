@@ -1,48 +1,91 @@
+// Seleccionamos los botones y modales
+let abrirModal = document.querySelector('[data-id="abrir1"]');
+let cerrarModal = document.querySelector('[data-id="cerrar1"]');
+let modal = document.querySelector('[data-id="modal1"]');
+let abrirModal2 = document.querySelector('[data-id="abrir2"]');
+let cerrarModal2 = document.querySelector('[data-id="cerrar2"]');
+let modal2 = document.querySelector('[data-id="modal2"]');
 
-let abrirModal = document.querySelector('[data-id="abrir1"]'); // Seleccionamos el boton que abre el modal
-let cerrarModal = document.querySelector('[data-id="cerrar1"]'); // Seleccionamos el boton que cierra el modal
-let modal = document.querySelector('[data-id="modal1"]'); // Seleccionamos el modal
-
+// Evento para abrir el primer modal
 abrirModal.addEventListener('click', () => {
-    
     var ahora = new Date();
     var fechaHora = ahora.toISOString().substring(0, 19).replace('T', ' ');
-    console.log(fechaHora);
     document.getElementById('exampleInputTiempo1').value = fechaHora;
     const matricula = generarMatriculaEspana();
-    console.log(matricula);
     document.getElementById('exampleInputMatricula').value = matricula;
     const plaza = encontrarAparcamientoDisponible();
     console.log(plaza.numero);
-    console.log(plaza.precio_hora);
-    compraTicket_DATA.push({fechaHora: fechaHora, matricula: matricula, plaza: plaza.numero, precio_hora: plaza.precio_hora});
+    if (!plaza) {
+        alert('No hay plazas disponibles.');
+        return;
+    }
+
+    compraTicket_DATA.push({
+        fechaHoraEntrada: fechaHora,
+        fechaHoraSalida: '',
+        matricula: matricula,
+        numero: plaza.numero,
+        precio_hora: plaza.precio_hora,
+        tiempo: 0,
+        importeTotal: 0,
+    });
+    //console.log(compraTicket_DATA.length);
+    guardarEstadoCompraTicket_DATA();
     cambiarDisponibilidadEspacio(plaza.numero, false);
     pintarParking();
 
-    console.log(compraTicket_DATA);
-
-  modal.showModal();
+    modal.showModal();
 });
 
+// Evento para cerrar el primer modal
 cerrarModal.addEventListener('click', () => {
     modal.close();
 });
 
-
-let abrirModal2 = document.querySelector('[data-id="abrir2"]'); // Seleccionamos el boton que abre el modal
-let cerrarModal2 = document.querySelector('[data-id="cerrar2"]'); // Seleccionamos el boton que cierra el modal
-let modal2 = document.querySelector('[data-id="modal2"]'); // Seleccionamos el modal
-
+// Evento para abrir el segundo modal
 abrirModal2.addEventListener('click', () => {
+    const ticketsNoPagados = compraTicket_DATA.filter(ticket => ticket.fechaHoraSalida === '');
+    console.log(ticketsNoPagados.length);
+    if (ticketsNoPagados.length === 0) {
+        alert('No hay tickets de aparcamiento pendientes de pago.');
+        return;
+    }
+    //escoge un tiket aleatorio y registra la hora de salida calcula el tiempo y el importe
+    const ticket = ticketsNoPagados[Math.floor(Math.random() * ticketsNoPagados.length)];
+    console.log(ticket.numero);
+
+    var ahora = new Date();
+    var fechaHora = ahora.toISOString().substring(0, 19).replace('T', ' ');
+//    document.getElementById('exampleInputTiempo2').value = fechaHora;
+ //   document.getElementById('exampleInputMatricula2').value = ticket.matricula;
+ //   document.getElementById('exampleInputPlaza').value = ticket.plaza;
+ //   document.getElementById('exampleInputPrecioHora').value = ticket.precio_hora;
+ //   document.getElementById('exampleInputFechaHoraEntrada').value = ticket.fechaHoraEntrada;
+ //   document.getElementById('exampleInputFechaHoraSalida').value = fechaHora;
+    var fechaHoraEntrada = new Date(ticket.fechaHoraEntrada);
+    var fechaHoraSalida = new Date(fechaHora);
+    var tiempo = Math.round((fechaHoraSalida - fechaHoraEntrada) / 1000 / 60);
+ //   document.getElementById('exampleInputTiempo').value = tiempo;
+    var importeTotal = ticket.precio_hora * tiempo;
+ //   document.getElementById('exampleInputImporteTotal').value = importeTotal;
+    ticket.fechaHoraSalida = fechaHora;
+    ticket.tiempo = tiempo;
+    ticket.importeTotal = importeTotal;
+    guardarEstadoCompraTicket_DATA();
+    cambiarDisponibilidadEspacio(ticket.numero, true);
+    console.log(APARCAMIENTO_DATA);
+    pintarParking();
   modal2.showModal();
 });
 
+// Evento para cerrar el segundo modal
 cerrarModal2.addEventListener('click', () => {
   modal2.close();
 });
 
-
-const compraTicket_DATA =[]
+// Recuperación de datos desde LocalStorage o uso de datos por defecto
+const compraTicket_DATA_ALMACENADO = localStorage.getItem('COMPRATICKET_DATA');
+const compraTicket_DATA = compraTicket_DATA_ALMACENADO ? JSON.parse(compraTicket_DATA_ALMACENADO) : [];
 
 const APARCAMIENTO_DATA_ALMACENADO = localStorage.getItem('APARCAMIENTO_DATA');
 const APARCAMIENTO_DATA = APARCAMIENTO_DATA_ALMACENADO ? JSON.parse(APARCAMIENTO_DATA_ALMACENADO) : [
@@ -86,7 +129,7 @@ const APARCAMIENTO_DATA = APARCAMIENTO_DATA_ALMACENADO ? JSON.parse(APARCAMIENTO
     { planta: '2', numero: 38, disponible: true, precio_hora: 0.25 },
     { planta: '2', numero: 39, disponible: true, precio_hora: 0.25 },
     { planta: '2', numero: 40, disponible: true, precio_hora: 0.25 },
-    // Tus datos iniciales aquí...
+
 ];
 
 pintarParking();
@@ -95,83 +138,53 @@ function cambiarDisponibilidadEspacio(numeroEspacio, disponible) {
     const espacio = APARCAMIENTO_DATA.find(espacio => espacio.numero === numeroEspacio);
     if (espacio) {
         espacio.disponible = disponible;
-        guardarEstadoAparcamiento(); // Guardar los cambios
+        guardarEstadoAparcamiento();
     }
 }
 
 function pintarParking() {
     APARCAMIENTO_DATA.forEach(espacio => {
-        let idEspacio = 'p' + espacio.numero; // Construir el ID, por ejemplo 'p1', 'p2', etc.
-        let elementoEspacio = document.getElementById(idEspacio); // Obtener el elemento del DOM
+        let idEspacio = 'p' + espacio.numero;
+        let elementoEspacio = document.getElementById(idEspacio);
 
         if (elementoEspacio) {
-            if (espacio.disponible) {
-                // Si el espacio está disponible
-                elementoEspacio.style.backgroundColor = 'green';
-            } else {
-                // Si el espacio no está disponible
-                elementoEspacio.style.backgroundColor = 'red';
-            }
+            elementoEspacio.style.backgroundColor = espacio.disponible ? 'green' : 'red';
         }
     });
 }
 
-// Llamar a la función para actualizar los colores al cargar la página
-
-
-
-
-
 function generarMatriculaEspana() {
-    // Generar cuatro dígitos aleatorios.
     const numeros = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  
-    // Generar tres letras aleatorias.
-    // Excluimos las vocales y la letra Ñ y algunas combinaciones inapropiadas.
     const letrasExcluidas = ['A', 'E', 'I', 'O', 'U', 'Ñ'];
     let letras = '';
     while (letras.length < 3) {
-      let letraAleatoria = String.fromCharCode(Math.floor(Math.random() * (90 - 65 + 1)) + 65);
-      if (!letrasExcluidas.includes(letraAleatoria)) {
-        letras += letraAleatoria;
-      }
+        let letraAleatoria = String.fromCharCode(Math.floor(Math.random() * (90 - 65 + 1)) + 65);
+        if (!letrasExcluidas.includes(letraAleatoria)) {
+            letras += letraAleatoria;
+        }
     }
-  
-    // Devuelve la combinación de números y letras.
     return numeros + ' ' + letras;
-  }
-
-  function encontrarAparcamientoDisponible() {
-    // Filtrar para obtener solo los espacios disponibles
-    const espaciosDisponibles = APARCAMIENTO_DATA.filter(espacio => espacio.disponible);
-
-    if (espaciosDisponibles.length === 0) {
-        alert('No hay aparcamientos disponibles.');
-        return null; // o podrías manejar esto de otra manera, como mostrar un mensaje al usuario
-    }
-
-    // Seleccionar un espacio disponible aleatoriamente
-    const espacioAleatorio = espaciosDisponibles[Math.floor(Math.random() * espaciosDisponibles.length)];
-
-    // Marcar el espacio seleccionado en el DOM
-    pintarParking(espacioAleatorio);
-
-    return espacioAleatorio;
 }
+
+function encontrarAparcamientoDisponible() {
+    const espaciosDisponibles = APARCAMIENTO_DATA.filter(espacio => espacio.disponible);
+    if (espaciosDisponibles.length === 0) {
+        return null;
+    }
+    return espaciosDisponibles[Math.floor(Math.random() * espaciosDisponibles.length)];
+}
+
 function guardarEstadoAparcamiento() {
     localStorage.setItem('APARCAMIENTO_DATA', JSON.stringify(APARCAMIENTO_DATA));
 }
 
+function guardarEstadoCompraTicket_DATA() {
+    localStorage.setItem('COMPRATICKET_DATA', JSON.stringify(compraTicket_DATA));
+}
 
-// Primero, seleccionamos el botón por su atributo data-id
 let botonLimpiar = document.querySelector('[data-id="limpiarDATA"]');
-
-// Luego, agregamos un event listener para el evento 'click'
 botonLimpiar.addEventListener('click', () => {
-    // Aquí se coloca el código para limpiar el LocalStorage
-     localStorage.removeItem('APARCAMIENTO_DATA');
-     location.reload();
-    // Puedes agregar aquí código adicional si necesitas realizar otras acciones
-    // después de limpiar el LocalStorage, como actualizar la interfaz de usuario.
-    alert("Datos limpiados del LocalStorage.");
+    localStorage.removeItem('APARCAMIENTO_DATA');
+    localStorage.removeItem('COMPRATICKET_DATA');
+    location.reload();
 });
