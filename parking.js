@@ -4,9 +4,14 @@ let cerrarModal = document.querySelector('[data-id="cerrar1"]'); // Seleccionamo
 let modal = document.querySelector('[data-id="modal1"]'); // Seleccionamos el modal
 
 abrirModal.addEventListener('click', () => {
+    
     var ahora = new Date();
-    var fechaHora = ahora.toISOString().substring(0, 19);
+    var fechaHora = ahora.toISOString().substring(0, 19).replace('T', ' ');
+    console.log(fechaHora);
     document.getElementById('exampleInputTiempo1').value = fechaHora;
+    const matricula = generarMatriculaEspana();
+    console.log(matricula);
+    document.getElementById('exampleInputMatricula').value = matricula;
   modal.showModal();
 });
 
@@ -69,6 +74,7 @@ const APARCAMIENTO_DATA = [
     { planta: '2', numero: 40, disponible: true, precio_hora: 0.25 },
 ]
 // Ejemplo de APARCAMIENTO_DATA
+pintarParking();
 
 function pintarParking() {
     APARCAMIENTO_DATA.forEach(espacio => {
@@ -88,8 +94,26 @@ function pintarParking() {
 }
 
 // Llamar a la función para actualizar los colores al cargar la página
-pintarParking();
 
 
 
 
+
+function generarMatriculaEspana() {
+    // Generar cuatro dígitos aleatorios.
+    const numeros = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  
+    // Generar tres letras aleatorias.
+    // Excluimos las vocales y la letra Ñ y algunas combinaciones inapropiadas.
+    const letrasExcluidas = ['A', 'E', 'I', 'O', 'U', 'Ñ'];
+    let letras = '';
+    while (letras.length < 3) {
+      let letraAleatoria = String.fromCharCode(Math.floor(Math.random() * (90 - 65 + 1)) + 65);
+      if (!letrasExcluidas.includes(letraAleatoria)) {
+        letras += letraAleatoria;
+      }
+    }
+  
+    // Devuelve la combinación de números y letras.
+    return numeros + ' ' + letras;
+  }
