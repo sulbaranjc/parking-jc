@@ -15,7 +15,7 @@ abrirModal.addEventListener('click', () => {
     document.getElementById('exampleInputMatricula').value = matricula;
     const plaza = encontrarAparcamientoDisponible();
     console.log(plaza.numero);
-    if (!plaza) {
+    if (plaza===-1) {
         alert('No hay plazas disponibles.');
         return;
     }
@@ -169,7 +169,7 @@ function generarMatriculaEspana() {
 function encontrarAparcamientoDisponible() {
     const espaciosDisponibles = APARCAMIENTO_DATA.filter(espacio => espacio.disponible);
     if (espaciosDisponibles.length === 0) {
-        return null;
+        return -1;
     }
     return espaciosDisponibles[Math.floor(Math.random() * espaciosDisponibles.length)];
 }
