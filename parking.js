@@ -1,3 +1,7 @@
+let APARCAMIENTO_DATA = []; // Esta variable ahora es global y accesible en todo el archivo
+let compraTicket_DATA = []; // Esta variable ahora es global
+
+
 // Seleccionamos los botones y modales
 let abrirModal = document.querySelector('[data-id="abrir1"]');
 let cerrarModal = document.querySelector('[data-id="cerrar1"]');
@@ -20,6 +24,20 @@ abrirModal.addEventListener('click', () => {
         return;
     }
 
+    axios.post('http://localhost:3000/api/tickets/ingresar', {
+        aparcamiento_id: plaza.id, // Asegúrate de que 'plaza' tenga un 'id' que corresponda a la base de datos
+        matricula: matricula,
+        fecha_entrada: fechaHora,
+        precio_hora: plaza.precio_hora // Incluye el precio por hora
+      })
+      .then((response) => {
+        console.log(response.data.message);
+        // Actualizar la UI según sea necesario aquí
+      })
+      .catch((error) => {
+        console.error('Error al ingresar el ticket:', error);
+      });
+      
     compraTicket_DATA.push({
         fechaHoraEntrada: fechaHora,
         fechaHoraSalida: '',
@@ -43,39 +61,55 @@ cerrarModal.addEventListener('click', () => {
 });
 
 // Evento para abrir el segundo modal
-abrirModal2.addEventListener('click', () => {
-    const ticketsNoPagados = compraTicket_DATA.filter(ticket => ticket.fechaHoraSalida === '');
-    console.log(ticketsNoPagados.length);
+abrirModal2.addEventListener('click', async () => {
+    const ticketsNoPagados = await obtenerTicketsNoPagados();
     if (ticketsNoPagados.length === 0) {
-        alert('No hay tickets de aparcamiento pendientes de pago.');
-        return;
+      alert('No hay tickets de aparcamiento pendientes de pago.');
+      return;
     }
-    //escoge un tiket aleatorio y registra la hora de salida calcula el tiempo y el importe
-    const ticket = ticketsNoPagados[Math.floor(Math.random() * ticketsNoPagados.length)];
-    console.log(ticket.numero);
 
-    var ahora = new Date();
-    var fechaHora = ahora.toISOString().substring(0, 19).replace('T', ' ');
-//    document.getElementById('exampleInputTiempo2').value = fechaHora;
- //   document.getElementById('exampleInputMatricula2').value = ticket.matricula;
- //   document.getElementById('exampleInputPlaza').value = ticket.plaza;
- //   document.getElementById('exampleInputPrecioHora').value = ticket.precio_hora;
- //   document.getElementById('exampleInputFechaHoraEntrada').value = ticket.fechaHoraEntrada;
- //   document.getElementById('exampleInputFechaHoraSalida').value = fechaHora;
-    var fechaHoraEntrada = new Date(ticket.fechaHoraEntrada);
-    var fechaHoraSalida = new Date(fechaHora);
-    var tiempo = Math.round((fechaHoraSalida - fechaHoraEntrada) / 1000 / 60);
- //   document.getElementById('exampleInputTiempo').value = tiempo;
-    var importeTotal = ticket.precio_hora * tiempo;
- //   document.getElementById('exampleInputImporteTotal').value = importeTotal;
-    ticket.fechaHoraSalida = fechaHora;
-    ticket.tiempo = tiempo;
-    ticket.importeTotal = importeTotal;
-    guardarEstadoCompraTicket_DATA();
-    cambiarDisponibilidadEspacio(ticket.numero, true);
-    console.log(APARCAMIENTO_DATA);
-    pintarParking();
-  modal2.showModal();
+    // Selecciona un ticket aleatorio
+    const ticketSeleccionado = ticketsNoPagados[Math.floor(Math.random() * ticketsNoPagados.length)];
+    
+    // Aquí debemos asegurarnos de que tenemos el precio por hora
+    // Puede ser parte del ticketSeleccionado si se ha almacenado allí cuando se creó el ticket
+    // O bien, si se debe obtener de otra manera (como de un estado global o una solicitud adicional al backend)
+    const precioHora = ticketSeleccionado.precio_hora; // Asumiendo que el ticket tiene el precio por hora
+
+    try {
+        // Realiza la solicitud POST al backend para cerrar el ticket seleccionado
+        const response = await axios.post('http://localhost:3000/api/tickets/cerrar', {
+            ticketId: ticketSeleccionado.id,
+            precioHora: precioHora // Enviamos el precio por hora al backend
+        });
+
+        // Actualiza el ticket seleccionado con los datos de la respuesta
+        if (response.data.success) {
+            const ticketActualizado = response.data.ticket;
+            console.log('Ticket actualizado:', ticketActualizado);
+            // Actualizar el estado de compraTicket_DATA con la nueva información
+            const index = compraTicket_DATA.findIndex(ticket => ticket.id === ticketActualizado.id);
+            if (index !== -1) {
+                compraTicket_DATA[index] = ticketActualizado;
+            }
+
+            // Cambia la disponibilidad del espacio de aparcamiento a disponible
+            cambiarDisponibilidadEspacio(ticketSeleccionado.aparcamiento_id, true);
+
+            // Actualiza la interfaz con los nuevos datos
+            cargarEstadoAparcamiento();
+            pintarParking();
+
+            // Muestra el modal con la información actualizada (si es necesario)
+            // Aquí deberías actualizar los campos del modal con los nuevos datos
+            modal2.showModal();
+        } else {
+            console.error('No se pudo cerrar el ticket:', response.data.message);
+        }
+    } catch (error) {
+        console.error('Error al realizar la solicitud al backend:', error);
+    }
+    
 });
 
 // Evento para cerrar el segundo modal
@@ -83,65 +117,65 @@ cerrarModal2.addEventListener('click', () => {
   modal2.close();
 });
 
-// Recuperación de datos desde LocalStorage o uso de datos por defecto
-const compraTicket_DATA_ALMACENADO = localStorage.getItem('COMPRATICKET_DATA');
-const compraTicket_DATA = compraTicket_DATA_ALMACENADO ? JSON.parse(compraTicket_DATA_ALMACENADO) : [];
 
-const APARCAMIENTO_DATA_ALMACENADO = localStorage.getItem('APARCAMIENTO_DATA');
-const APARCAMIENTO_DATA = APARCAMIENTO_DATA_ALMACENADO ? JSON.parse(APARCAMIENTO_DATA_ALMACENADO) : [
-    { planta: '1', numero: 1, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 2, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 3, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 4, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 5, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 6, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 7, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 8, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 9, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 10, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 11, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 12, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 13, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 14, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 15, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 16, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 17, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 18, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 19, disponible: true, precio_hora: 0.25 },
-    { planta: '1', numero: 20, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 21, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 22, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 23, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 24, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 25, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 26, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 27, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 28, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 29, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 30, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 31, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 32, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 33, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 34, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 35, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 36, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 37, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 38, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 39, disponible: true, precio_hora: 0.25 },
-    { planta: '2', numero: 40, disponible: true, precio_hora: 0.25 },
+// Asegúrate de que axios esté disponible en tu proyecto
 
-];
+// Función asincrónica para cargar el estado de los parkings desde el backend
+async function cargarEstadoAparcamiento() {
+    try {
+      const response = await axios.get('http://localhost:3000/api/parkings');
+      const data = response.data;
+      APARCAMIENTO_DATA = data; // Asegúrate de que APARCAMIENTO_DATA esté definido en el ámbito adecuado
+      pintarParking(); // Asume que esta función ya está definida para actualizar la UI
+    } catch (error) {
+      console.error('Error al cargar los datos de los parkings:', error);
+    }
+    pintarParking();
+  }
+  
+  // Llama a la función al iniciar la aplicación
+  cargarEstadoAparcamiento();
+  
+// Función asincrónica para cargar el estado de los tickets activos desde el backend
+async function cargarTicketsActivos() {
+    try {
+      const response = await axios.get('http://localhost:3000/api/tickets/activos');
+      compraTicket_DATA = response.data; // Almacena los tickets activos en la variable global
+      console.log(compraTicket_DATA)
+      // Puedes llamar aquí a cualquier función que necesite usar compraTicket_DATA
+      // Por ejemplo, si tienes una función que actualiza la UI con estos datos:
+      // actualizarUIConTickets(compraTicket_DATA);
+    } catch (error) {
+      console.error('Error al cargar los tickets activos:', error);
+    }
+  }
+  
+  // Luego, llama a esta función en el punto adecuado de tu aplicación, por ejemplo, al cargar la página:
+  cargarTicketsActivos();
+
 
 pintarParking();
 
-function cambiarDisponibilidadEspacio(numeroEspacio, disponible) {
-    const espacio = APARCAMIENTO_DATA.find(espacio => espacio.numero === numeroEspacio);
-    if (espacio) {
-        espacio.disponible = disponible;
-        guardarEstadoAparcamiento();
+async function cambiarDisponibilidadEspacio(numeroEspacio, disponible) {
+    try {
+      // Realiza la solicitud POST al backend con axios
+      const response = await axios.post('http://localhost:3000/api/parkings/disponibilidad', {
+        numeroEspacio: numeroEspacio,
+        disponible: disponible
+      });
+      
+      // Verifica la respuesta del servidor
+      if (response.data.success) {
+        console.log(response.data.message);
+        // Aquí puedes recargar los datos del estado de aparcamiento o actualizar la UI según sea necesario
+      } else {
+        console.error(response.data.message);
+      }
+    } catch (error) {
+      console.error('Error al cambiar la disponibilidad:', error);
     }
-}
-
+  }
+  
 function pintarParking() {
     APARCAMIENTO_DATA.forEach(espacio => {
         let idEspacio = 'p' + espacio.numero;
@@ -174,6 +208,20 @@ function encontrarAparcamientoDisponible() {
     return espaciosDisponibles[Math.floor(Math.random() * espaciosDisponibles.length)];
 }
 
+
+async function obtenerTicketsNoPagados() {
+    try {
+      const response = await axios.get('http://localhost:3000/api/tickets/activos');
+      return response.data.filter(ticket => ticket.fecha_salida === null);
+    } catch (error) {
+      console.error('Error al obtener los tickets no pagados:', error);
+      return []; // Devuelve un arreglo vacío en caso de error
+    }
+  }
+  
+
+
+
 function guardarEstadoAparcamiento() {
     localStorage.setItem('APARCAMIENTO_DATA', JSON.stringify(APARCAMIENTO_DATA));
 }
@@ -182,9 +230,3 @@ function guardarEstadoCompraTicket_DATA() {
     localStorage.setItem('COMPRATICKET_DATA', JSON.stringify(compraTicket_DATA));
 }
 
-let botonLimpiar = document.querySelector('[data-id="limpiarDATA"]');
-botonLimpiar.addEventListener('click', () => {
-    localStorage.removeItem('APARCAMIENTO_DATA');
-    localStorage.removeItem('COMPRATICKET_DATA');
-    location.reload();
-});
