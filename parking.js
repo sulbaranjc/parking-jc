@@ -1,6 +1,8 @@
 let APARCAMIENTO_DATA = []; // Esta variable ahora es global y accesible en todo el archivo
 let compraTicket_DATA = []; // Esta variable ahora es global
+//actualizarIngresosTotales();
 
+  
 
 // Seleccionamos los botones y modales
 let abrirModal = document.querySelector('[data-id="abrir1"]');
@@ -48,11 +50,11 @@ abrirModal.addEventListener('click', () => {
         importeTotal: 0,
     });
     //console.log(compraTicket_DATA.length);
-    guardarEstadoCompraTicket_DATA();
+    //guardarEstadoCompraTicket_DATA();
     cambiarDisponibilidadEspacio(plaza.numero, false);
     pintarParking();
 
-    modal.showModal();
+   modal.showModal();
 });
 
 // Evento para cerrar el primer modal
@@ -99,6 +101,7 @@ abrirModal2.addEventListener('click', async () => {
             // Actualiza la interfaz con los nuevos datos
             cargarEstadoAparcamiento();
             pintarParking();
+            actualizarIngresosTotales();
 
             // Muestra el modal con la información actualizada (si es necesario)
             // Aquí deberías actualizar los campos del modal con los nuevos datos
@@ -219,14 +222,26 @@ async function obtenerTicketsNoPagados() {
     }
   }
   
-
+  async function actualizarIngresosTotales() {
+    try {
+      const response = await axios.get('http://localhost:3000/api/ingresos/totales');
+      if (response.data.success) {
+        const ingresosTotales = response.data.ingresosTotales;
+        const divGananciasTotales = document.getElementById('ganaciastotales');
+        divGananciasTotales.innerHTML = `<p>Ingresos totales del día: ${ingresosTotales} €</p>`;
+      }
+    } catch (error) {
+      console.error('Error al obtener los ingresos totales del día:', error);
+    }
+  }
+  actualizarIngresosTotales();
+  // Luego, puedes llamar a esta función en el punto adecuado en tu frontend,
+  // por ejemplo, al cargar la página o después de cerrar un ticket.
+  
 
 
 function guardarEstadoAparcamiento() {
     localStorage.setItem('APARCAMIENTO_DATA', JSON.stringify(APARCAMIENTO_DATA));
 }
 
-function guardarEstadoCompraTicket_DATA() {
-    localStorage.setItem('COMPRATICKET_DATA', JSON.stringify(compraTicket_DATA));
-}
 
