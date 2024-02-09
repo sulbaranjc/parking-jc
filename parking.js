@@ -88,8 +88,6 @@ abrirModal2.addEventListener('click', async () => {
             cambiarDisponibilidadEspacio(ticketSeleccionado.aparcamiento_id, true);
 
             // Actualiza la interfaz con los nuevos datos
-            // cargarEstadoAparcamiento();
-            // pintarParking();
             pintarUnParking(ticketSeleccionado.aparcamiento_id, true);
             actualizarIngresosTotales();
 
