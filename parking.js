@@ -14,8 +14,8 @@ let modal2 = document.querySelector('[data-id="modal2"]');
 
 // Evento para abrir el primer modal
 abrirModal.addEventListener('click', async () => { // Usa async aquí
-  var ahora = new Date();
-  var fechaHora = ahora.toISOString().substring(0, 19).replace('T', ' ');
+//  var ahora = new Date();
+//  var fechaHora = ahora.toISOString().substring(0, 19).replace('T', ' ');
 
   const matricula = generarMatriculaEspana();
 
