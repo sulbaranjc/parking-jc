@@ -234,7 +234,7 @@ async function obtenerTicketsNoPagados() {
       if (response.data.success) {
         const ingresosTotales = response.data.ingresosTotales;
         const divGananciasTotales = document.getElementById('ganaciastotales');
-        divGananciasTotales.innerHTML = `<p>Ingresos totales del día: ${ingresosTotales} €</p>`;
+        divGananciasTotales.innerHTML = `<h1>Ingresos totales del día: ${ingresosTotales} €</h1>`;
       }
     } catch (error) {
       console.error('Error al obtener los ingresos totales del día:', error);
