@@ -13,49 +13,38 @@ let cerrarModal2 = document.querySelector('[data-id="cerrar2"]');
 let modal2 = document.querySelector('[data-id="modal2"]');
 
 // Evento para abrir el primer modal
-abrirModal.addEventListener('click', () => {
-    var ahora = new Date();
-    var fechaHora = ahora.toISOString().substring(0, 19).replace('T', ' ');
-    document.getElementById('exampleInputTiempo1').value = fechaHora;
-    const matricula = generarMatriculaEspana();
-    document.getElementById('exampleInputMatricula').value = matricula;
-    const plaza = encontrarAparcamientoDisponible();
-    console.log(plaza.numero);
-    if (plaza===-1) {
-        alert('No hay plazas disponibles.');
-        return;
-    }
+abrirModal.addEventListener('click', async () => { // Usa async aquí
+  var ahora = new Date();
+  var fechaHora = ahora.toISOString().substring(0, 19).replace('T', ' ');
 
-    axios.post('http://localhost:3000/api/tickets/ingresar', {
-        aparcamiento_id: plaza.id, // Asegúrate de que 'plaza' tenga un 'id' que corresponda a la base de datos
-        matricula: matricula,
-        fecha_entrada: fechaHora,
-        precio_hora: plaza.precio_hora // Incluye el precio por hora
-      })
-      .then((response) => {
-        console.log(response.data.message);
-        // Actualizar la UI según sea necesario aquí
-      })
-      .catch((error) => {
-        console.error('Error al ingresar el ticket:', error);
+  const matricula = generarMatriculaEspana();
+
+  // Ahora encontrarAparcamientoDisponible debe ser una función asíncrona que devuelva una promesa
+  const plaza = await encontrarAparcamientoDisponible(); // Usa await aquí
+  if (!plaza || plaza === -1) {
+      alert('No hay plazas disponibles.');
+      return;
+  }
+
+  // Ahora que tienes la plaza, puedes continuar con el proceso
+  try {
+      const response = await axios.post('http://localhost:3000/api/tickets/ingresar', {
+          aparcamiento_id: plaza.id,
+          matricula: matricula,
+          precio_hora: plaza.precio_hora
       });
       
-    compraTicket_DATA.push({
-        fechaHoraEntrada: fechaHora,
-        fechaHoraSalida: '',
-        matricula: matricula,
-        numero: plaza.numero,
-        precio_hora: plaza.precio_hora,
-        tiempo: 0,
-        importeTotal: 0,
-    });
-    //console.log(compraTicket_DATA.length);
-    //guardarEstadoCompraTicket_DATA();
-    cambiarDisponibilidadEspacio(plaza.numero, false);
-    pintarParking();
+      // La respuesta de la API se maneja aquí
+      console.log(response.data.message);
+      
+      // Actualiza la disponibilidad de la plaza
+      cambiarDisponibilidadEspacio(plaza.numero, false);
 
-   modal.showModal();
+  } catch (error) {
+      console.error('Error al ingresar el ticket:', error);
+  }
 });
+
 
 // Evento para cerrar el primer modal
 cerrarModal.addEventListener('click', () => {
@@ -99,13 +88,14 @@ abrirModal2.addEventListener('click', async () => {
             cambiarDisponibilidadEspacio(ticketSeleccionado.aparcamiento_id, true);
 
             // Actualiza la interfaz con los nuevos datos
-            cargarEstadoAparcamiento();
-            pintarParking();
+            // cargarEstadoAparcamiento();
+            // pintarParking();
+            pintarUnParking(ticketSeleccionado.aparcamiento_id, true);
             actualizarIngresosTotales();
 
             // Muestra el modal con la información actualizada (si es necesario)
             // Aquí deberías actualizar los campos del modal con los nuevos datos
-            modal2.showModal();
+            // modal2.showModal();
         } else {
             console.error('No se pudo cerrar el ticket:', response.data.message);
         }
@@ -133,7 +123,7 @@ async function cargarEstadoAparcamiento() {
     } catch (error) {
       console.error('Error al cargar los datos de los parkings:', error);
     }
-    pintarParking();
+    //pintarParking();
   }
   
   // Llama a la función al iniciar la aplicación
@@ -155,9 +145,7 @@ async function cargarTicketsActivos() {
   
   // Luego, llama a esta función en el punto adecuado de tu aplicación, por ejemplo, al cargar la página:
   cargarTicketsActivos();
-
-
-pintarParking();
+  pintarParking();
 
 async function cambiarDisponibilidadEspacio(numeroEspacio, disponible) {
     try {
@@ -170,6 +158,8 @@ async function cambiarDisponibilidadEspacio(numeroEspacio, disponible) {
       // Verifica la respuesta del servidor
       if (response.data.success) {
         console.log(response.data.message);
+        console.log('cambiando el espacio  numero:  '+numeroEspacio)
+        pintarUnParking(numeroEspacio,disponible);
         // Aquí puedes recargar los datos del estado de aparcamiento o actualizar la UI según sea necesario
       } else {
         console.error(response.data.message);
@@ -190,6 +180,15 @@ function pintarParking() {
     });
 }
 
+function pintarUnParking(espacio, disponible) {
+    let idEspacio = 'p' + espacio;
+    let elementoEspacio = document.getElementById(idEspacio);
+    console.log(idEspacio);
+    if (elementoEspacio) {
+      elementoEspacio.style.backgroundColor = disponible ? 'green' : 'red';
+  }
+}
+
 function generarMatriculaEspana() {
     const numeros = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     const letrasExcluidas = ['A', 'E', 'I', 'O', 'U', 'Ñ'];
@@ -203,14 +202,23 @@ function generarMatriculaEspana() {
     return numeros + ' ' + letras;
 }
 
-function encontrarAparcamientoDisponible() {
-    const espaciosDisponibles = APARCAMIENTO_DATA.filter(espacio => espacio.disponible);
-    if (espaciosDisponibles.length === 0) {
-        return -1;
-    }
-    return espaciosDisponibles[Math.floor(Math.random() * espaciosDisponibles.length)];
+async function encontrarAparcamientoDisponible() {
+  try {
+      // Hacemos una solicitud al backend para encontrar un aparcamiento disponible
+      const response = await axios.get('http://localhost:3000/api/aparcamientos/disponible');
+      if (response.data.success) {
+          // Si hay un aparcamiento disponible, lo devolvemos
+          return response.data.aparcamiento;
+      } else {
+          // Si no hay aparcamientos disponibles, mostramos un mensaje y devolvemos -1
+          alert('No hay plazas disponibles.');
+          return -1;
+      }
+  } catch (error) {
+      console.error('Error al buscar un aparcamiento disponible:', error);
+      return -1; // En caso de error en la solicitud también devolvemos -1
+  }
 }
-
 
 async function obtenerTicketsNoPagados() {
     try {
@@ -240,8 +248,5 @@ async function obtenerTicketsNoPagados() {
   
 
 
-function guardarEstadoAparcamiento() {
-    localStorage.setItem('APARCAMIENTO_DATA', JSON.stringify(APARCAMIENTO_DATA));
-}
 
 
