@@ -176,7 +176,7 @@ function pintarParking() {
 function pintarUnParking(espacio, disponible) {
     let idEspacio = 'p' + espacio;
     let elementoEspacio = document.getElementById(idEspacio);
-    console.log(idEspacio);
+    console.log(idEspacio+" "+ (disponible ? "Liberado" : "Ocupado"));
     if (elementoEspacio) {
       elementoEspacio.style.backgroundColor = disponible ? 'green' : 'red';
   }
@@ -305,13 +305,13 @@ async function salida() {
         });
         if (response.data.success) {
             const ticketActualizado = response.data.ticket;
-            console.log('Ticket actualizado:', ticketActualizado);
+//            console.log('Ticket actualizado:', ticketActualizado);
             const index = compraTicket_DATA.findIndex(ticket => ticket.id === ticketActualizado.id);
             if (index !== -1) {
                 compraTicket_DATA[index] = ticketActualizado;
             }
             cambiarDisponibilidadEspacio(ticketSeleccionado.aparcamiento_id, true);
-            pintarUnParking(ticketSeleccionado.aparcamiento_id, true);
+//            pintarUnParking(ticketSeleccionado.aparcamiento_id, true);
             actualizarIngresosTotales();
         } else {
             console.error('No se pudo cerrar el ticket:', response.data.message);
