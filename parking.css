@@ -40,3 +40,29 @@
 .boton-entrada {
     min-width: 150px;
 }
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .toggle-label {
+    cursor: pointer;
+    padding: 5px 20px;
+    background: #ccc;
+    display: inline-block;
+  }
+  
+  input[type="radio"] {
+    display: none; /* Ocultar los radio buttons por defecto */
+  }
+  
+  input[type="radio"]:checked + .toggle-label {
+    background: #6c6;
+  }
+  
+  /* Agregar estilos adicionales para que parezca un interruptor */
+  .chek{
+    font-size: 25px; /* Este tamaño es solo un ejemplo, ajústalo según necesites */
+    /* Asegúrate de también ajustar el line-height, padding, y cualquier otra propiedad necesaria */
+}

@@ -232,8 +232,10 @@
                 <button type="button" class="boton-entrada btn btn-danger btn-lg"  data-id="abrir2">SALIDA</button>
             </div>
             <div class="col-6 d-flex justify-content-center">
-                <button type="button" onclick="iniciarEjecucion()" class="boton-entrada btn btn-success btn-lg me-5" data-id="abrir3">EMPEZAR</button>
-                <button type="button" onclick="detenerEjecucion()" class="boton-entrada btn btn-danger btn-lg"  data-id="abrir4">TERMINAR</button>
+                <div class="form-check form-switch chek">
+                    <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheck">
+                    <label class="form-check-label" for="flexSwitchCheck">Transacciones Aleatorias</label>
+                </div>
             </div>
         </div>
         <div class="row mt-5">

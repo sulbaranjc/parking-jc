@@ -9,6 +9,8 @@ let abrirModal2 = document.querySelector('[data-id="abrir2"]');
 let cerrarModal2 = document.querySelector('[data-id="cerrar2"]');
 let modal2 = document.querySelector('[data-id="modal2"]');
 let continuar = false; // Inicialmente, no continúa hasta que se presione "Iniciar"
+let cicloActivo = false; // Para evitar reinicios del ciclo mientras ya está activo
+
   // Llama a la función al iniciar la aplicación
   cargarEstadoAparcamiento();
   cargarTicketsActivos();
@@ -19,16 +21,28 @@ let continuar = false; // Inicialmente, no continúa hasta que se presione "Inic
     continuar = false; // Detiene el ciclo
 }
 
+function manejarCiclo() {
+  continuar = !continuar;
+  if (continuar && !cicloActivo) {
+      ciclo();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const switchControl = document.getElementById('flexSwitchCheck');
+  switchControl.addEventListener('change', manejarCiclo);
+});
+
 async function iniciarEjecucion() {
     if (!continuar) { // Evita reiniciar el ciclo si ya está en ejecución
         continuar = true;
         await ciclo();
     }
 }
-
 async function ciclo() {
+  cicloActivo = true;
   while (continuar) {
-      const accion = Math.floor(Math.random() * 3); // Genera un número aleatorio entre 0 y 2
+      const accion = Math.floor(Math.random() * 3);
       switch (accion) {
           case 0:
               entrada();
@@ -36,14 +50,14 @@ async function ciclo() {
           case 1:
               salida();
               break;
-          default:
-            console.log("no hace nada esta vez")
+              default:
+                console.log("no hace nada")
           // No hace nada si es 2
       }
 
-      // Espera 3 segundos antes de continuar
       await new Promise(resolve => setTimeout(resolve, 3000));
   }
+  cicloActivo = false;
 }
 
 async function entrada() {
