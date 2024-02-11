@@ -227,17 +227,27 @@
 
     <div class="container mt-5">
         <div class="row">
-            <div class="col-12 d-flex justify-content-center">
+            <div class="col-6 d-flex justify-content-center">
                 <button type="button" class="boton-entrada btn btn-success btn-lg me-5" data-id="abrir1">ENTRADA</button>
                 <button type="button" class="boton-entrada btn btn-danger btn-lg"  data-id="abrir2">SALIDA</button>
+            </div>
+            <div class="col-6 d-flex justify-content-center">
+                <button type="button" onclick="iniciarEjecucion()" class="boton-entrada btn btn-success btn-lg me-5" data-id="abrir3">EMPEZAR</button>
+                <button type="button" onclick="detenerEjecucion()" class="boton-entrada btn btn-danger btn-lg"  data-id="abrir4">TERMINAR</button>
             </div>
         </div>
         <div class="row mt-5">
             <div  id="ganaciastotales" class="col-12 d-flex justify-content-center"></div>
         </div>
-
     </div>
 
+    <div class="container mt-5">
+        <div class="row mt-5">
+            <div  id="ganaciastotales" class="col-12 d-flex justify-content-center"></div>
+        </div>
+    </div>
+
+    
     <dialog data-id="modal1">
         <h2>Salida 1</h2>
         <button class="btn btn-outline-success" data-id="cerrar1">Ciérrame</button>

@@ -14,8 +14,6 @@ let modal2 = document.querySelector('[data-id="modal2"]');
 
 // Evento para abrir el primer modal
 abrirModal.addEventListener('click', async () => { // Usa async aquí
-//  var ahora = new Date();
-//  var fechaHora = ahora.toISOString().substring(0, 19).replace('T', ' ');
 
   const matricula = generarMatriculaEspana();
 
@@ -62,9 +60,6 @@ abrirModal2.addEventListener('click', async () => {
     // Selecciona un ticket aleatorio
     const ticketSeleccionado = ticketsNoPagados[Math.floor(Math.random() * ticketsNoPagados.length)];
     
-    // Aquí debemos asegurarnos de que tenemos el precio por hora
-    // Puede ser parte del ticketSeleccionado si se ha almacenado allí cuando se creó el ticket
-    // O bien, si se debe obtener de otra manera (como de un estado global o una solicitud adicional al backend)
     const precioHora = ticketSeleccionado.precio_hora; // Asumiendo que el ticket tiene el precio por hora
 
     try {
@@ -155,8 +150,8 @@ async function cambiarDisponibilidadEspacio(numeroEspacio, disponible) {
       
       // Verifica la respuesta del servidor
       if (response.data.success) {
-        console.log(response.data.message);
-        console.log('cambiando el espacio  numero:  '+numeroEspacio)
+//        console.log(response.data.message);
+//        console.log('cambiando el espacio  numero:  '+numeroEspacio)
         pintarUnParking(numeroEspacio,disponible);
         // Aquí puedes recargar los datos del estado de aparcamiento o actualizar la UI según sea necesario
       } else {
@@ -244,7 +239,127 @@ async function obtenerTicketsNoPagados() {
   // Luego, puedes llamar a esta función en el punto adecuado en tu frontend,
   // por ejemplo, al cargar la página o después de cerrar un ticket.
   
+  function detenerEjecucion() {
+    continuar = false; // Detiene el ciclo
+}
 
+async function iniciarEjecucion() {
+    if (!continuar) { // Evita reiniciar el ciclo si ya está en ejecución
+        continuar = true;
+        await ciclo();
+    }
+}
+
+async function ciclo() {
+  while (continuar) {
+      const accion = Math.floor(Math.random() * 3); // Genera un número aleatorio entre 0 y 2
+      switch (accion) {
+          case 0:
+              entrada();
+              break;
+          case 1:
+              salida();
+              break;
+          default:
+            console.log("no hace nada esta vez")
+          // No hace nada si es 2
+      }
+
+      // Espera 3 segundos antes de continuar
+      await new Promise(resolve => setTimeout(resolve, 3000));
+  }
+}
+
+async function entrada() {
+  
+  { // Usa async aquí
+
+    const matricula = generarMatriculaEspana();
+  
+    // Ahora encontrarAparcamientoDisponible debe ser una función asíncrona que devuelva una promesa
+    const plaza = await encontrarAparcamientoDisponible(); // Usa await aquí
+    if (!plaza || plaza === -1) {
+//        alert('No hay plazas disponibles.');
+        return;
+    }
+  
+    // Ahora que tienes la plaza, puedes continuar con el proceso
+    try {
+        const response = await axios.post('http://localhost:3000/api/tickets/ingresar', {
+            aparcamiento_id: plaza.id,
+            matricula: matricula,
+            precio_hora: plaza.precio_hora
+        });
+        
+        // La respuesta de la API se maneja aquí
+//        console.log(response.data.message);
+        
+        // Actualiza la disponibilidad de la plaza
+        cambiarDisponibilidadEspacio(plaza.numero, false);
+  
+    } catch (error) {
+        console.error('Error al ingresar el ticket:', error);
+    }
+  }
+
+
+
+
+}
+
+async function salida() {
+
+  {
+    const ticketsNoPagados = await obtenerTicketsNoPagados();
+    if (ticketsNoPagados.length === 0) {
+//      alert('No hay tickets de aparcamiento pendientes de pago.');
+      return;
+    }
+
+    // Selecciona un ticket aleatorio
+    const ticketSeleccionado = ticketsNoPagados[Math.floor(Math.random() * ticketsNoPagados.length)];
+    
+    const precioHora = ticketSeleccionado.precio_hora; // Asumiendo que el ticket tiene el precio por hora
+
+    try {
+        // Realiza la solicitud POST al backend para cerrar el ticket seleccionado
+        const response = await axios.post('http://localhost:3000/api/tickets/cerrar', {
+            ticketId: ticketSeleccionado.id,
+            precioHora: precioHora // Enviamos el precio por hora al backend
+        });
+
+        // Actualiza el ticket seleccionado con los datos de la respuesta
+        if (response.data.success) {
+            const ticketActualizado = response.data.ticket;
+            console.log('Ticket actualizado:', ticketActualizado);
+            // Actualizar el estado de compraTicket_DATA con la nueva información
+            const index = compraTicket_DATA.findIndex(ticket => ticket.id === ticketActualizado.id);
+            if (index !== -1) {
+                compraTicket_DATA[index] = ticketActualizado;
+            }
+
+            // Cambia la disponibilidad del espacio de aparcamiento a disponible
+            cambiarDisponibilidadEspacio(ticketSeleccionado.aparcamiento_id, true);
+
+            // Actualiza la interfaz con los nuevos datos
+            pintarUnParking(ticketSeleccionado.aparcamiento_id, true);
+            actualizarIngresosTotales();
+
+            // Muestra el modal con la información actualizada (si es necesario)
+            // Aquí deberías actualizar los campos del modal con los nuevos datos
+            // modal2.showModal();
+        } else {
+            console.error('No se pudo cerrar el ticket:', response.data.message);
+        }
+    } catch (error) {
+        console.error('Error al realizar la solicitud al backend:', error);
+    }
+    
+}  
+
+}
+
+let continuar = false; // Inicialmente, no continúa hasta que se presione "Iniciar"
 
 
 
